@@ -73,7 +73,13 @@ export function useQuestionnaire() {
   }, [])
 
   const back = useCallback(() => {
-    setState((s) => (s && s.currentIndex > 0 ? { ...s, currentIndex: s.currentIndex - 1 } : s))
+    setState((s) => {
+      if (!s) return s
+      if (s.currentIndex > 0) return { ...s, currentIndex: s.currentIndex - 1 }
+      // First question: return to intro without discarding answers or progress.
+      if (s.startedAt !== null) return { ...s, startedAt: null }
+      return s
+    })
   }, [])
 
   const reset = useCallback(() => {
@@ -85,7 +91,8 @@ export function useQuestionnaire() {
     state && step ? state.answers[step.id] : undefined
 
   const canProceed = !!step && (isOptional(step) || hasAnswer(state!.answers, step))
-  const canGoBack = !!state && state.currentIndex > 0
+  const canGoBack =
+    !!state && state.startedAt !== null && state.currentIndex < steps.length
 
   return {
     phase,
