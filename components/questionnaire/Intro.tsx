@@ -1,12 +1,14 @@
+'use client'
+
+import { useEffect, useRef, useState, type RefObject } from 'react'
 import { Button } from '@/components/ui/Button'
+import { cn } from '@/lib/cn'
 
 const STROKE = 'var(--accent)'
 const FILL = 'var(--surface)'
 const SW = 1.6
 
-// Glyphs on a standard 24×24 grid, round joins/caps throughout for a
-// consistent, professional icon-set feel. Closed shapes use FILL as a
-// knockout against the tinted badge behind them.
+// Glyphs on a standard 24×24 grid, round joins/caps throughout.
 function InstitutionGlyph({ id }: { id: 'plu' | 'exe' | 'obc' | 'med' | 'pra' }) {
   switch (id) {
     case 'plu':
@@ -60,99 +62,216 @@ function InstitutionGlyph({ id }: { id: 'plu' | 'exe' | 'obc' | 'med' | 'pra' })
   }
 }
 
-const INSTITUTIONS = [
+type Institution = {
+  id: 'plu' | 'exe' | 'obc' | 'med' | 'pra'
+  name: string
+  question: string
+  left: string
+  right: string
+}
+
+const INSTITUTIONS: Institution[] = [
+  { id: 'plu', name: 'Pluralita', question: 'Ako rýchlo meníš názory?', left: 'Impulzívne', right: 'Overthinkujem' },
   {
-    label: 'Pluralita',
-    id: 'plu' as const,
-    text: 'Rôzne názory majú v tvojej hlave priestor.',
+    id: 'exe',
+    name: 'Exekutíva',
+    question: 'Premieňaš svoje myšlienky na činy?',
+    left: 'Držím sa striktného plánu',
+    right: 'Plány idú mimo mňa',
   },
   {
-    label: 'Exekutíva',
-    id: 'exe' as const,
-    text: 'Rozhodneš a naozaj to urobíš.',
+    id: 'obc',
+    name: 'Osobná sloboda',
+    question: 'Ako si dovolíš cítiť emócie?',
+    left: 'Necítim nič',
+    right: 'Cítim príliš',
   },
   {
-    label: 'Slobody',
-    id: 'obc' as const,
-    text: 'Rešpektuješ hranice iných aj svoje.',
+    id: 'med',
+    name: 'Sloboda informácií',
+    question: 'Dostávaš o sebe pravdivé informácie?',
+    left: 'Kritika ma nezaujíma',
+    right: 'Moja sebahodnota padá na kritike',
   },
   {
-    label: 'Médiá',
-    id: 'med' as const,
-    text: 'Overuješ, odkiaľ informácia prišla.',
-  },
-  {
-    label: 'Právny štát',
-    id: 'pra' as const,
-    text: 'Pravidlá platia pre teba rovnako ako pre iných.',
+    id: 'pra',
+    name: 'Právny štát',
+    question: 'Platí na teba rovnaký meter?',
+    left: 'Som na seba prísny, na ostatných nie',
+    right: 'Mierny na seba, prísny na iných',
   },
 ]
 
-function Schematic() {
+// Reveal-on-scroll (once). Visible immediately under reduced motion / no IO.
+function useInView(ref: RefObject<Element>, threshold = 0.4): boolean {
+  const [inView, setInView] = useState(false)
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setInView(true)
+      return
+    }
+    const el = ref.current
+    if (!el || typeof IntersectionObserver === 'undefined') {
+      setInView(true)
+      return
+    }
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setInView(true)
+          obs.disconnect()
+        }
+      },
+      { threshold },
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [ref, threshold])
+  return inView
+}
+
+const SPRING = 'ease-[cubic-bezier(.34,1.56,.64,1)]'
+
+function InstitutionSection({ inst }: { inst: Institution }) {
+  const ref = useRef<HTMLElement>(null)
+  const inView = useInView(ref, 0.4)
   return (
-    <div
-      className="my-10 flex flex-col gap-3"
-      role="img"
-      aria-label="Päť inštitúcií — pluralita, exekutíva, slobody, médiá, právny štát"
+    <section
+      ref={ref}
+      className="flex min-h-[68vh] flex-col justify-center"
+      aria-label={inst.name}
     >
-      {INSTITUTIONS.map(({ label, id, text }) => (
-        <div
-          key={id}
-          className="card-glow flex items-center gap-4 rounded-xl border border-line bg-surface px-4 py-4"
-        >
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-wash sm:h-12 sm:w-12">
-            <svg viewBox="0 0 24 24" className="h-6 w-6 sm:h-7 sm:w-7" aria-hidden>
-              <InstitutionGlyph id={id} />
-            </svg>
-          </div>
-          <div className="min-w-0">
-            <span className="font-mono text-[0.68rem] tracking-wide text-ink sm:text-[0.78rem]">
-              {label}
-            </span>
-            <p className="text-[0.76rem] leading-snug text-muted">{text}</p>
-          </div>
+      {/* icon — assembles into place on scroll */}
+      <div
+        className={cn(
+          'mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent-wash transition-all duration-500',
+          SPRING,
+          inView ? 'rotate-0 scale-100 opacity-100' : '-rotate-12 scale-50 opacity-0',
+        )}
+      >
+        <svg viewBox="0 0 24 24" className="h-8 w-8" aria-hidden>
+          <InstitutionGlyph id={inst.id} />
+        </svg>
+      </div>
+
+      <p
+        className={cn(
+          'font-mono text-xs uppercase tracking-[0.16em] text-accent transition-all duration-500',
+          inView ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0',
+        )}
+      >
+        {inst.name}
+      </p>
+      <h2
+        className={cn(
+          'mt-2 font-display text-[1.9rem] font-extrabold leading-tight tracking-tightish transition-all delay-75 duration-500 sm:text-[2.2rem]',
+          inView ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0',
+        )}
+      >
+        {inst.question}
+      </h2>
+
+      {/* animated spectrum bar with two poles */}
+      <div className="mt-8">
+        <div className="relative h-2 rounded-full bg-track">
+          <div
+            className={cn(
+              'grad-bar glow-soft h-full origin-center rounded-full transition-transform delay-150 duration-700 ease-out',
+              inView ? 'scale-x-100' : 'scale-x-0',
+            )}
+          />
+          <span
+            aria-hidden
+            className={cn(
+              'absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full border-2 border-accent bg-surface transition-all delay-200 duration-700 ease-out',
+              inView ? 'left-1/2 -translate-x-1/2 opacity-100' : 'left-0 opacity-0',
+            )}
+            style={{ boxShadow: '0 0 10px rgba(42,70,232,0.35)' }}
+          />
         </div>
-      ))}
-    </div>
+        <div
+          className={cn(
+            'mt-3 flex justify-between gap-6 text-[0.82rem] leading-snug text-muted transition-opacity delay-300 duration-700',
+            inView ? 'opacity-100' : 'opacity-0',
+          )}
+        >
+          <span className="max-w-[45%]">{inst.left}</span>
+          <span className="max-w-[45%] text-right">{inst.right}</span>
+        </div>
+      </div>
+    </section>
   )
 }
 
 export function Intro({ onStart }: { onStart: () => void }) {
+  const rulesRef = useRef<HTMLDivElement>(null)
+  const passed = useInView(rulesRef, 0.3)
+
   return (
-    <div className="step-enter mx-auto max-w-prose px-5 py-14 sm:py-20">
-      <p className="font-mono text-[0.68rem] uppercase tracking-[0.18em] text-accent">
-        Demokratický index myslenia
-      </p>
-      <h1 className="mt-3 font-display text-[2.1rem] font-extrabold leading-none tracking-tighter2 sm:text-[2.5rem]">
-        Ako je usporiadané tvoje{' '}
-        <span className="font-serif font-medium italic text-accent">vnútorné rozhodovanie</span>
-      </h1>
+    <>
+      <div className="mx-auto max-w-2xl px-5 pb-40">
+        {/* Hero */}
+        <section className="step-enter flex min-h-[82vh] flex-col justify-center">
+          <p className="font-mono text-[0.68rem] uppercase tracking-[0.18em] text-accent">
+            Demokratický index myslenia
+          </p>
+          <h1 className="mt-3 font-display text-[2.3rem] font-extrabold leading-[1.03] tracking-tighter2 sm:text-[3rem]">
+            Aké je to žiť v{' '}
+            <span className="font-serif font-medium italic text-accent">tvojej hlave?</span>
+          </h1>
+          <p className="mt-6 text-[1.08rem] leading-relaxed text-muted">
+            Spokojný život sa začína spokojným vnútorným prežívaním. Už Platón tvrdil, že svet
+            okolo nás je produktom našej mysle.
+          </p>
+          <p className="mt-4 text-[1.08rem] leading-relaxed text-muted">
+            Máš svoj vnútorný svet v rovnováhe?
+          </p>
+          <p className="mt-10 font-mono text-[0.7rem] uppercase tracking-[0.16em] text-faint">
+            skroluj ↓
+          </p>
+        </section>
 
-      <p className="mt-5 text-[1.02rem] leading-relaxed text-muted">
-        Päť inštitúcií v tvojej hlave. Nemeriame, aký si — sledujeme, čo sa za posledný mesiac
-        dialo.
-      </p>
+        {/* Institutions — one section each, revealed on scroll */}
+        {INSTITUTIONS.map((inst) => (
+          <InstitutionSection key={inst.id} inst={inst} />
+        ))}
 
-      <Schematic />
-
-      <p className="text-[0.9rem] leading-relaxed text-muted">
-        Pri každej vete odhadni, koľkokrát sa ti to za posledný mesiac stalo.
-      </p>
-
-      <div className="mt-8 flex items-center gap-5">
-        <Button onClick={onStart}>
-          Začať <span aria-hidden>→</span>
-        </Button>
-        <span className="font-mono text-sm text-faint">≈ 12–15 min</span>
+        {/* Closing — the answering rule (triggers the CTA glow) */}
+        <section
+          ref={rulesRef}
+          className={cn(
+            'flex min-h-[50vh] flex-col justify-center transition-all duration-700 ease-out',
+            passed ? 'translate-y-0 opacity-100' : 'translate-y-6 opacity-0',
+          )}
+        >
+          <p className="font-mono text-[0.66rem] uppercase tracking-[0.16em] text-faint">
+            Pravidlá
+          </p>
+          <p className="mt-3 font-serif text-[1.3rem] italic leading-snug text-ink">
+            Pri každej vete odhadni, koľkokrát sa ti to za posledný mesiac stalo. Odpovedaj bez
+            cenzúry — prvý impulz býva najpresnejší.
+          </p>
+          <p className="mt-6 font-mono text-[0.82rem] text-muted">
+            5 inštitúcií · 50 otázok · zhodnotenie vplyvu stresu
+          </p>
+        </section>
       </div>
 
-      {/* TODO: privacy copy — the spec's "Výsledok sa nikam neposiela a nikto ho neuvidí."
-          sentence is intentionally withheld until the data-collection decision is made.
-          Whatever ships here must match what the app actually does. */}
-      <p className="mt-8 border-t border-line pt-6 text-[0.84rem] leading-relaxed text-muted">
-        Nie je to psychologický test ani diagnostika. Neprešiel validáciou a nehovorí nič
-        o tvojom duševnom zdraví.
-      </p>
-    </div>
+      {/* Sticky bottom CTA (glows once the reader reaches the rules) */}
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-line bg-bg/90 backdrop-blur">
+        <div className="mx-auto flex max-w-2xl flex-col gap-1.5 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-4">
+            <Button onClick={onStart} className={passed ? 'cta-ready' : undefined}>
+              Začať <span aria-hidden>→</span>
+            </Button>
+            <span className="font-mono text-sm text-faint">≈ 12–15 min</span>
+          </div>
+          {/* TODO: privacy copy — withheld until the data-collection decision is made. */}
+          <p className="max-w-md text-[0.74rem] leading-snug text-faint">
+            Nie je to psychologický test ani diagnostika — nehovorí nič o tvojom duševnom zdraví.
+          </p>
+        </div>
+      </div>
+    </>
   )
 }

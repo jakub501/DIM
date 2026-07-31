@@ -100,6 +100,26 @@ body::after {
   box-shadow: 0 0 12px rgba(42, 70, 232, 0.2);
 }
 
+/* Two-pulse attention for the CTA once the reader has passed all institutions. */
+@keyframes ctaReady {
+  0%,
+  100% {
+    box-shadow:
+      0 3px 10px -4px rgba(42, 70, 232, 0.45),
+      0 0 18px rgba(42, 70, 232, 0.45),
+      0 0 36px rgba(42, 70, 232, 0.3);
+  }
+  50% {
+    box-shadow:
+      0 3px 10px -4px rgba(42, 70, 232, 0.5),
+      0 0 30px rgba(42, 70, 232, 0.7),
+      0 0 60px rgba(42, 70, 232, 0.55);
+  }
+}
+.cta-ready {
+  animation: ctaReady 1.4s ease-in-out 2;
+}
+
 /* Resting glow + hover lift for interactive cards (institution cards). */
 .card-glow {
   box-shadow: 0 8px 20px -14px rgba(42, 70, 232, 0.5);
