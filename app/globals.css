@@ -1,0 +1,144 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Light-committed cobalt system (design direction v4). One accent (cobalt),
+   one warm spark (ochre), cool neutrals for depth. No red/green scale. */
+:root {
+  --bg: #f6f7fb; /* light cool page ground */
+  --surface: #ffffff; /* cards / options */
+  --panel: #eef1fb; /* tinted sub-sections for depth */
+  --ink: #14151b;
+  --muted: #4c5160; /* AA on bg */
+  --faint: #7f8494; /* AA on bg */
+  --line: #e3e5ed;
+  --track: #dde0ea; /* bar track — dark enough that short bars read */
+  --accent: #2a46e8;
+  --accent-strong: #1b31bd;
+  --accent-wash: #e8ecff;
+  --accent-line: #c1cbff;
+  --spark: #f59a1e;
+  --spark-deep: #d97b06;
+  --spark-wash: #fff2dc;
+  --grad: linear-gradient(135deg, #2340e0 0%, #3f57f2 100%);
+  --grad-bar: linear-gradient(90deg, #2540e6 0%, #5570ff 100%);
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--ink);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Ambient life behind the content (static, subtle). */
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  z-index: -1;
+  border-radius: 50%;
+  filter: blur(80px);
+  pointer-events: none;
+}
+body::before {
+  width: 60vw;
+  height: 60vw;
+  left: -20vw;
+  top: -18vw;
+  background: radial-gradient(circle, rgba(42, 70, 232, 0.1), transparent 70%);
+}
+body::after {
+  width: 50vw;
+  height: 50vw;
+  right: -18vw;
+  bottom: -12vw;
+  background: radial-gradient(circle, rgba(245, 154, 30, 0.08), transparent 70%);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Screen-reader-only utility. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Cobalt glow used on primary actions. */
+.glow-accent {
+  box-shadow:
+    0 3px 10px -4px rgba(42, 70, 232, 0.45),
+    0 0 18px rgba(42, 70, 232, 0.45),
+    0 0 36px rgba(42, 70, 232, 0.3);
+}
+.glow-accent:hover {
+  box-shadow:
+    0 5px 14px -6px rgba(42, 70, 232, 0.45),
+    0 0 26px rgba(42, 70, 232, 0.55),
+    0 0 50px rgba(42, 70, 232, 0.4);
+}
+.glow-soft {
+  box-shadow: 0 0 12px rgba(42, 70, 232, 0.2);
+}
+
+/* Cobalt gradient fill (bars) and gradient text (index). */
+.grad-bar {
+  background: var(--grad-bar);
+}
+.grad-text {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* One-question-per-screen entrance. */
+@keyframes stepIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.step-enter {
+  animation: stepIn 240ms ease-out both;
+}
+
+/* Programmatic focus must not draw the keyboard focus ring. */
+[data-focus-target]:focus {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
